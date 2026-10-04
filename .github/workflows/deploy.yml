@@ -1,0 +1,39 @@
+name: Production Deployment Template
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Deployment Target'
+        required: true
+        default: 'production'
+
+# Example production deployment workflow demonstrating automated SSH / Docker deploy
+jobs:
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Execute Remote Deployment
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd /opt/applications/fullstack-react-node-platform
+            git pull origin main
+            docker compose build --pull
+            docker compose up -d --remove-orphans
+            docker compose ps
+          EOF
+
+      - name: Verify Health Check
+        run: |
+          curl --fail --retry 5 --retry-delay 5 https://${{ secrets.DOMAIN_NAME }}/api/v1/health || exit 1
