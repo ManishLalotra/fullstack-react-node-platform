@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
 import { ShieldCheck, Server, Activity, Users, Database, Layers, ArrowUpRight } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('overview');
 
   const stats = [
     { label: 'Platform Availability', value: '99.98%', icon: Activity, change: '+0.04% MoM' },
